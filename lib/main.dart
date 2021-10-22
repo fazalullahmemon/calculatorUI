@@ -1,3 +1,4 @@
+import 'package:calcuitask/calc.dart';
 import 'package:calcuitask/calculator_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic/flutter_neumorphic.dart';
@@ -38,133 +39,43 @@ class CalculatorHome extends StatefulWidget {
 }
 
 class _CalculatorHomeState extends State<CalculatorHome> {
-  String output = '';
-  List<String> firstRowButtons = ['AC', '+/-', '%'];
-  static String divideSign = String.fromCharCode(0x00F7);
-  List<String> operationButtons = ['÷', 'x', '+', '-', '='];
-  List<List<String>> naturalNumbers = [
-    ['7', '8', '9'],
-    ['4', '5', '6'],
-    ['1', '2', '3'],
-  ];
-  List<String> bottomElements = ['.', '='];
-  double firstNum = 0;
-  double secondNum = 0;
-  String operand = '';
-  double finalResult = 0;
-
-  performMathOperation(String selectedOperation) {
+  performSecondaryMathOperation(String selectedOperation) {
     switch (selectedOperation) {
       case 'AC':
-        if (output.isNotEmpty) {
-          setState(() {
-            firstNum = 0;
-            secondNum = 0;
-            finalResult = 0;
-            output = '';
-          });
-        }
+        setState(() {
+          Calc.input = '';
+          displayResult = '';
+        });
 
         break;
       case '+/-':
-        if (output.isNotEmpty) {
+        if (displayResult.isNotEmpty) {
           setState(() {
-            if (output.contains('-')) {
-              output = output.replaceAll(RegExp('-'), '');
+            if (displayResult.contains('-')) {
+              Calc.input = displayResult.replaceAll(RegExp('-'), '');
+              displayResult = Calc.input;
+              isOutput = false;
             } else {
+              isOutput = false;
+
               String result = '-';
-              result += output;
-              output = result;
+              result += displayResult;
+              Calc.input = result;
+              displayResult = Calc.input;
             }
           });
         }
-
         break;
       case '%':
-        if (output.isNotEmpty) {
-          double? result = double.tryParse(output);
+        if (displayResult.isNotEmpty) {
+          double? result = double.tryParse(displayResult);
           if (result != null) {
             result /= 100;
             setState(() {
-              output = result.toString();
-            });
-          }
-        }
+              isOutput = false;
 
-        break;
-      case '+':
-        if (output.isNotEmpty) {
-          setState(() {
-            firstNum = double.tryParse(output)!;
-            operand = '+';
-            output = '';
-            // output+='+';
-          });
-        }
-        break;
-      case '-':
-        if (output.isNotEmpty) {
-          setState(() {
-            firstNum = double.tryParse(output)!;
-            operand = '-';
-            output = '';
-          });
-        }
-        break;
-      case 'x':
-        if (output.isNotEmpty &&
-            !(output.contains(divideSign, output.length - 1))) {
-          setState(() {
-            firstNum = double.tryParse(output)!;
-            operand = '*';
-            output = '';
-          });
-        }
-        break;
-      case '÷':
-        if (output.isNotEmpty &&
-            !(output.contains(divideSign, output.length - 1))) {
-          setState(() {
-            firstNum = double.tryParse(output)!;
-            operand = '/';
-            output = '';
-          });
-        }
-        break;
-      case '=':
-        if (output.isNotEmpty) {
-          secondNum = double.tryParse(output)!;
-          if (operand == '+') {
-            finalResult = firstNum + secondNum;
-            setState(() {
-              output = finalResult.toString();
-              firstNum = 0;
-              secondNum = 0;
-              operand = '';
-            });
-          } else if (operand == '-') {
-            finalResult = firstNum - secondNum;
-            setState(() {
-              output = finalResult.toString();
-              firstNum = 0;
-              secondNum = 0;
-              operand = '';
-            });
-          } else if (operand == '*') {
-            finalResult = firstNum * secondNum;
-            setState(() {
-              output = finalResult.toString();
-              firstNum = 0;
-              secondNum = 0;
-              operand = '';
-            });
-          } else if (operand == '/') {
-            finalResult = firstNum / secondNum;
-            setState(() {
-              output = finalResult.toString();
-              firstNum = 0;
-              secondNum = 0;
-              operand = '';
+              Calc.input = result.toString();
+              displayResult = Calc.input;
             });
           }
         }
@@ -172,50 +83,75 @@ class _CalculatorHomeState extends State<CalculatorHome> {
     }
   }
 
+  String displayResult = '';
+  bool isOutput = false;
+
   @override
   Widget build(BuildContext context) {
-    Size buttonSize = Size(80, 80);
+    NeumorphicStyle neumorphicStyleConcave = NeumorphicStyle(
+      shadowLightColor: Colors.black26,
+      color: Theme.of(context).backgroundColor,
+      shape: NeumorphicShape.concave,
+      boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(22)),
+      depth: -4,
+    );
+    NeumorphicStyle neumorphicStyleConvex = NeumorphicStyle(
+      shadowLightColor: Colors.white38,
+      lightSource: LightSource.bottomRight,
+      color: Theme.of(context).backgroundColor,
+      shape: NeumorphicShape.convex,
+      boxShape: const NeumorphicBoxShape.circle(),
+      depth: 4,
+    );
     Widget lowerElements = Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         Container(
-          width: 170,
+          width: 140,
           height: 60,
           child: NeumorphicButton(
-              style: NeumorphicStyle(
-                color: Theme.of(context).backgroundColor,
-                shape: NeumorphicShape.concave,
-                boxShape:
-                    NeumorphicBoxShape.roundRect(BorderRadius.circular(22)),
-                depth: -4,
-              ),
+              style: neumorphicStyleConcave,
               child: Text(
                 '0',
                 style: Theme.of(context).textTheme.bodyText1,
               ),
               onPressed: () {
                 setState(() {
-                  output += '0';
+                  if (isOutput) {
+                    displayResult = '';
+                    isOutput = false;
+                  }
+                  displayResult += '0';
+                  Calc.input += '0';
                 });
               }),
         ),
-        ElevatedButton(
-          style: ButtonStyle(
-            minimumSize: MaterialStateProperty.all<Size>(buttonSize),
-            shape:
-                MaterialStateProperty.all<CircleBorder>(const CircleBorder()),
+        Container(
+          width: 70,
+          height: 70,
+          child: NeumorphicButton(
+            style: neumorphicStyleConvex,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Text(
+                '.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyText1,
+              ),
+            ),
+            onPressed: () {
+              if (!Calc.input.contains('.')) {
+                setState(() {
+                  Calc.input += '.';
+                  if (isOutput) {
+                    displayResult = '';
+                    isOutput = false;
+                  }
+                  displayResult += '.';
+                });
+              }
+            },
           ),
-          child: Text(
-            '.',
-            style: Theme.of(context).textTheme.bodyText1,
-          ),
-          onPressed: () {
-            if (!output.contains('.')) {
-              setState(() {
-                output += '.';
-              });
-            }
-          },
         ),
       ],
     );
@@ -224,44 +160,57 @@ class _CalculatorHomeState extends State<CalculatorHome> {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: List.from(
         mathOperationsSecondary.values.map(
-          (e) => ElevatedButton(
-            style: ButtonStyle(
-              minimumSize: MaterialStateProperty.all<Size>(buttonSize),
-              shape:
-                  MaterialStateProperty.all<CircleBorder>(const CircleBorder()),
-            ),
-            onPressed: () {
-              performMathOperation(firstRowButtons[e.index]);
-            },
-            child: Text(
-              firstRowButtons[e.index],
-              style: Theme.of(context).textTheme.bodyText2,
+          (e) => Container(
+            width: 70,
+            height: 70,
+            child: NeumorphicButton(
+              style: neumorphicStyleConvex,
+              onPressed: () {
+                performSecondaryMathOperation(Calc.firstRowButtons[e.index]);
+              },
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(
+                  Calc.firstRowButtons[e.index],
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyText2,
+                ),
+              ),
             ),
           ),
         ),
       ),
     );
 
-    List<Widget> middleElements = naturalNumbers
+    List<Widget> middleElements = Calc.naturalNumbers
         .map((e) => Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: e
-                  .map((e) => ElevatedButton(
-                        style: ButtonStyle(
-                          minimumSize:
-                              MaterialStateProperty.all<Size>(buttonSize),
-                          shape: MaterialStateProperty.all<CircleBorder>(
-                              const CircleBorder()),
+                  .map((e) => Container(
+                        width: 70,
+                        height: 70,
+                        child: NeumorphicButton(
+                          style: neumorphicStyleConvex,
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              '$e',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodyText1,
+                            ),
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              Calc.input += e;
+
+                              if (isOutput) {
+                                displayResult = '';
+                                isOutput = false;
+                              }
+                              displayResult += e;
+                            });
+                          },
                         ),
-                        child: Text(
-                          '$e',
-                          style: Theme.of(context).textTheme.bodyText1,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            output += e;
-                          });
-                        },
                       ))
                   .toList(),
             ))
@@ -271,21 +220,40 @@ class _CalculatorHomeState extends State<CalculatorHome> {
     Widget operationsColumn = Column(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: List.from(
-        mathOperationsPrimary.values.map((e) => ElevatedButton(
-              style: ButtonStyle(
-                minimumSize: MaterialStateProperty.all<Size>(buttonSize),
-                shape: MaterialStateProperty.all<CircleBorder>(
-                    const CircleBorder()),
+        mathOperationsPrimary.values.map((e) => Container(
+              width: 70,
+              height: 70,
+              child: NeumorphicButton(
+                style: neumorphicStyleConvex,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    Calc.operationButtons[e.index],
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headline1,
+                  ),
+                ),
+                onPressed: () {
+                  // operand = operationButtons[e.index];
+                  // Calc.input+=operationButtons[e.index];
+                  if (Calc.operationButtons[e.index] == '=') {
+                    setState(() {
+                      String calculatedResult = Calc.calculate();
+                      displayResult = calculatedResult;
+                      isOutput = true;
+                    });
+                  } else {
+                    setState(() {
+                      Calc.input += Calc.operationButtons[e.index];
+                      displayResult += Calc.operationButtons[e.index];
+                      if (isOutput) {
+                        Calc.input = displayResult;
+                        isOutput = false;
+                      }
+                    });
+                  }
+                },
               ),
-              child: Text(
-                operationButtons[e.index],
-                style: Theme.of(context).textTheme.headline1,
-              ),
-              onPressed: () {
-                setState(() {
-                  performMathOperation(operationButtons[e.index]);
-                });
-              },
             )),
       ),
     );
@@ -302,7 +270,7 @@ class _CalculatorHomeState extends State<CalculatorHome> {
                   alignment: Alignment.centerRight,
                   padding: EdgeInsets.only(right: 20, left: 20),
                   child: Text(
-                    output,
+                    displayResult,
                     textAlign: TextAlign.end,
                     style: Theme.of(context).textTheme.headline2,
                   ),
